@@ -1,0 +1,54 @@
+#include <setjmp.h>
+#include <stdio.h> 
+ jmp_buf buf1;
+  jmp_buf sched;
+  jmp_buf main_buf;
+  init=0;
+ int is_resume=0;
+void resume(void *(func())){
+ printf("init = %d\n",init);
+ is_resume=1;
+ if(!init){
+  printf("resuming");
+   init=1;
+   func();
+   printf("yielded\n");
+ }
+ else{
+  longjmp(buf1,1);
+ }
+}
+  
+void yield(){
+ is_resume=0;
+ setjmp(buf1);
+ printf("yielding\n");
+ if(!is_resume){
+  longjmp(main_buf,1);
+ }
+}
+
+ 
+void myfunc(){
+ printf("starting func\n");
+ yield();
+ printf("ending func\n");
+}
+int main (void)
+{
+   int first=0;
+   int second=0;
+   printf("1\n");
+   setjmp(main_buf);
+   
+   if(!first){
+    first=1; 
+    resume(myfunc);
+   }
+   if(!second){
+    second=1;
+    resume(myfunc);
+   }
+   return 0;
+}
+
